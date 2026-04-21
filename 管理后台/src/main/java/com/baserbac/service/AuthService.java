@@ -67,10 +67,10 @@ public class AuthService {
         String redisKey = RedisKeyConstant.CAPTCHA_PREFIX + captchaKey;
         redisTemplate.opsForValue().set(redisKey, captcha.getCode(), 5, TimeUnit.MINUTES);
         
-        // 返回base64图片和key
+        // 返回base64图片和key（需要添加data:image/png;base64,前缀）
         Map<String, String> result = new HashMap<>();
         result.put("captchaKey", captchaKey);
-        result.put("captchaImage", captcha.getImageBase64Data());
+        result.put("captchaImage", "data:image/png;base64," + captcha.getImageBase64Data());
         
         return result;
     }
