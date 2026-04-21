@@ -33,11 +33,11 @@
               @keyup.enter="handleLogin"
             />
             <img
-              v-if="captchaImage"
-              :src="captchaImage"
+              :src="captchaImage || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='"
               alt="验证码"
               class="captcha-image"
               @click="getCaptcha"
+              style="cursor: pointer;"
             />
           </div>
         </el-form-item>
@@ -87,9 +87,21 @@ const rules: FormRules = {
 const getCaptcha = async () => {
   try {
     const res = await request.get('/auth/captcha')
-    captchaKey.value = res.data.captchaKey
-    captchaImage.value = res.data.captchaImage
-    loginForm.captchaKey = res.data.captchaKey
+    console.log('验证码响应:', res)
+    
+    if (res.code === 200) {
+      const data = res.data
+      captchaKey.value = data.captchaKey
+      let img = data.captchaImage
+      if (img && !img.startsWith('data:image')) {
+        img = 'data:image/png;base64,' + img
+      }
+      captchaImage.value = img
+      loginForm.captchaKey = data.captchaKey
+      console.log('captchaImage:', captchaImage.value.substring(0, 50) + '...')
+    } else {
+      console.error('获取验证码失败:', res.message)
+    }
   } catch (error) {
     console.error('获取验证码失败', error)
   }
