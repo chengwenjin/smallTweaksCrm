@@ -33,12 +33,15 @@
               @keyup.enter="handleLogin"
             />
             <img
-              :src="captchaImage || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='"
+              v-if="captchaImage"
+              :src="captchaImage"
               alt="验证码"
               class="captcha-image"
               @click="getCaptcha"
-              style="cursor: pointer;"
             />
+            <div v-else class="captcha-loading" @click="getCaptcha">
+              点击加载
+            </div>
           </div>
         </el-form-item>
         <el-form-item>
@@ -83,27 +86,71 @@ const rules: FormRules = {
   captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 }
 
+// 安全获取对象属性
+const getSafeValue = (obj: any, ...path: string[]): any => {
+  let current = obj
+  for (const key of path) {
+    if (current === null || current === undefined) {
+      return undefined
+    }
+    current = current[key]
+  }
+  return current
+}
+
 // 获取验证码
 const getCaptcha = async () => {
   try {
+    console.log('开始获取验证码...')
     const res = await request.get('/auth/captcha')
-    console.log('验证码响应:', res)
+    console.log('验证码原始响应:', JSON.stringify(res))
     
-    if (res.code === 200) {
-      const data = res.data
-      captchaKey.value = data.captchaKey
-      let img = data.captchaImage
-      if (img && !img.startsWith('data:image')) {
-        img = 'data:image/png;base64,' + img
-      }
-      captchaImage.value = img
-      loginForm.captchaKey = data.captchaKey
-      console.log('captchaImage:', captchaImage.value.substring(0, 50) + '...')
-    } else {
-      console.error('获取验证码失败:', res.message)
+    // 尝试各种可能的数据结构
+    let captchaImg: string | undefined
+    let captchaK: string | undefined
+
+    // 情况1: res 直接是数据对象 {captchaKey, captchaImage}
+    if (res && res.captchaImage) {
+      captchaImg = res.captchaImage
+      captchaK = res.captchaKey
+      console.log('情况1: res 直接是数据对象')
     }
+    // 情况2: res = {code, data}, data = {captchaKey, captchaImage}
+    else if (res && res.data) {
+      captchaImg = getSafeValue(res, 'data', 'captchaImage')
+      captchaK = getSafeValue(res, 'data', 'captchaKey')
+      console.log('情况2: res.data 包含数据')
+    }
+    // 情况3: res = {code, message, captchaKey, captchaImage}
+    else if (res && 'captchaImage' in res) {
+      captchaImg = res.captchaImage
+      captchaK = res.captchaKey
+      console.log('情况3: res 包含 captchaImage')
+    }
+
+    console.log('解析结果 - captchaImg:', captchaImg ? (captchaImg.substring(0, 50) + '...') : 'undefined')
+    console.log('解析结果 - captchaKey:', captchaK)
+
+    // 确保图片格式正确
+    if (captchaImg) {
+      if (!captchaImg.startsWith('data:image')) {
+        captchaImg = 'data:image/png;base64,' + captchaImg
+      }
+      captchaImage.value = captchaImg
+    } else {
+      console.error('未能解析出验证码图片')
+      ElMessage.error('获取验证码失败: 无法解析响应数据')
+    }
+
+    if (captchaK) {
+      captchaKey.value = captchaK
+      loginForm.captchaKey = captchaK
+    }
+
+    console.log('最终 captchaImage.value:', captchaImage.value ? (captchaImage.value.substring(0, 50) + '...') : '空')
   } catch (error) {
     console.error('获取验证码失败', error)
+    ElMessage.error('获取验证码失败: ' + (error as Error).message)
   }
 }
 
@@ -115,16 +162,39 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
+        console.log('登录请求参数:', loginForm)
         const res = await request.post('/auth/login', loginForm)
-        
-        // 保存Token
-        localStorage.setItem('accessToken', res.data.accessToken)
-        localStorage.setItem('refreshToken', res.data.refreshToken)
-        
-        ElMessage.success('登录成功')
-        router.push('/')
+        console.log('登录响应:', res)
+
+        // 尝试各种可能的数据结构
+        let accessToken: string | undefined
+        let refreshToken: string | undefined
+
+        if (res && res.data) {
+          accessToken = getSafeValue(res, 'data', 'accessToken')
+          refreshToken = getSafeValue(res, 'data', 'refreshToken')
+        }
+        if (!accessToken && res) {
+          accessToken = res.accessToken
+          refreshToken = res.refreshToken
+        }
+
+        console.log('解析 accessToken:', accessToken ? '已获取' : '未获取')
+
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken)
+          if (refreshToken) {
+            localStorage.setItem('refreshToken', refreshToken)
+          }
+          ElMessage.success('登录成功')
+          router.push('/')
+        } else {
+          ElMessage.error('登录失败: 未获取到Token')
+          getCaptcha()
+          loginForm.captcha = ''
+        }
       } catch (error) {
-        // 登录失败，刷新验证码
+        console.error('登录失败', error)
         getCaptcha()
         loginForm.captcha = ''
       } finally {
@@ -135,6 +205,7 @@ const handleLogin = async () => {
 }
 
 onMounted(() => {
+  console.log('Login.vue 已挂载，开始获取验证码...')
   getCaptcha()
 })
 </script>
@@ -168,6 +239,7 @@ onMounted(() => {
 .captcha-wrapper {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .captcha-image {
@@ -175,6 +247,26 @@ onMounted(() => {
   height: 40px;
   cursor: pointer;
   border-radius: 4px;
+  border: 1px solid #dcdfe6;
+}
+
+.captcha-loading {
+  width: 120px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f7fa;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #909399;
+}
+
+.captcha-loading:hover {
+  color: #409eff;
+  border-color: #c0c4cc;
 }
 
 .login-button {
