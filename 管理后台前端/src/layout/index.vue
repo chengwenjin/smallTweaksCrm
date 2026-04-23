@@ -37,6 +37,23 @@
           <el-menu-item index="/system/operation-logs">操作日志</el-menu-item>
           <el-menu-item index="/system/login-logs">登录日志</el-menu-item>
         </el-sub-menu>
+
+        <el-sub-menu index="/crm">
+          <template #title>
+            <el-icon><UserFilled /></el-icon>
+            <span>客户与线索管理</span>
+          </template>
+          <el-sub-menu index="/crm/lead-lifecycle">
+            <template #title>
+              <el-icon><Connection /></el-icon>
+              <span>线索全生命周期</span>
+            </template>
+            <el-menu-item index="/crm/lead-lifecycle/lead">
+              <el-icon><Plus /></el-icon>
+              <span>多渠道录入</span>
+            </el-menu-item>
+          </el-sub-menu>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
 
