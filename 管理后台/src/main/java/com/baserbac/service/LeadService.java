@@ -129,7 +129,7 @@ public class LeadService {
      */
     @Transactional(rollbackFor = Exception.class)
     public Long createLead(LeadCreateDTO createDTO, Long userId, String userName) {
-        CrmLeadSource source = validateSource(createDTO.getSourceId(), createDTO.getSourceCode());
+        CrmLeadSource source = validateSource(createDTO.getSourceId(), null);
 
         CrmLead lead = buildLeadFromCreateDTO(createDTO, source, userId, userName);
         leadMapper.insert(lead);
@@ -405,7 +405,7 @@ public class LeadService {
             }).sheet().headRowNumber(1).doRead();
         } catch (IOException e) {
             log.error("读取Excel文件失败", e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+            throw new BusinessException(ResultCode.INTERNAL_ERROR);
         }
 
         int totalCount = importRows.size();
@@ -430,7 +430,7 @@ public class LeadService {
                     }
                 }
                 if (source == null) {
-                    throw new BusinessException(ResultCode.PARAM_ERROR);
+                    throw new BusinessException(ResultCode.BAD_REQUEST);
                 }
 
                 CrmLead lead = new CrmLead();
@@ -486,7 +486,7 @@ public class LeadService {
 
     private void validateImportRow(LeadImportRow row) {
         if (StrUtil.isBlank(row.getLeadName())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR);
+            throw new BusinessException(ResultCode.BAD_REQUEST);
         }
     }
 
@@ -527,11 +527,11 @@ public class LeadService {
         }
 
         if (source == null) {
-            throw new BusinessException(ResultCode.PARAM_ERROR);
+            throw new BusinessException(ResultCode.BAD_REQUEST);
         }
 
         if (source.getIsEnabled() == 0) {
-            throw new BusinessException(ResultCode.PARAM_ERROR);
+            throw new BusinessException(ResultCode.BAD_REQUEST);
         }
 
         return source;
@@ -620,27 +620,27 @@ public class LeadService {
 
     private void saveLeadLog(CrmLead lead, int operateType, String operateName, CrmLead beforeUpdate,
                              Long userId, String userName, String remark) {
-        CrmLeadLog log = new CrmLeadLog();
-        log.setLeadId(lead.getId());
-        log.setLeadNo(lead.getLeadNo());
-        log.setOperateType(operateType);
-        log.setOperateName(operateName);
-        log.setOperateUserId(userId);
-        log.setOperateUserName(userName);
-        log.setRemark(remark);
+        CrmLeadLog leadLog = new CrmLeadLog();
+        leadLog.setLeadId(lead.getId());
+        leadLog.setLeadNo(lead.getLeadNo());
+        leadLog.setOperateType(operateType);
+        leadLog.setOperateName(operateName);
+        leadLog.setOperateUserId(userId);
+        leadLog.setOperateUserName(userName);
+        leadLog.setRemark(remark);
 
         if (beforeUpdate != null) {
             try {
                 Map<String, Object> content = new HashMap<>();
                 content.put("before", beforeUpdate);
                 content.put("after", lead);
-                log.setOperateContent(objectMapper.writeValueAsString(content));
+                leadLog.setOperateContent(objectMapper.writeValueAsString(content));
             } catch (JsonProcessingException e) {
                 log.error("序列化操作日志失败", e);
             }
         }
 
-        leadLogMapper.insert(log);
+        leadLogMapper.insert(leadLog);
     }
 
     private LeadVO convertToVO(CrmLead lead) {
