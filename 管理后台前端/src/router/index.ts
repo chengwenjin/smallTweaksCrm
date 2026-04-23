@@ -48,6 +48,12 @@ const routes: RouteRecordRaw[] = [
         name: 'LoginLog',
         component: () => import('@/views/system/LoginLog.vue'),
         meta: { title: '登录日志' }
+      },
+      {
+        path: 'crm/lead-lifecycle/lead',
+        name: 'LeadManagement',
+        component: () => import('@/views/crm/lead/index.vue'),
+        meta: { title: '多渠道录入' }
       }
     ]
   }
