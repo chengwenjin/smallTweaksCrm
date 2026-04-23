@@ -50,7 +50,7 @@ public class LeadController {
     @PostMapping
     public R<Long> createLead(@Valid @RequestBody LeadCreateDTO createDTO) {
         Long userId = SecurityUtil.getCurrentUserId();
-        String userName = SecurityUtil.getCurrentUserName();
+        String userName = SecurityUtil.getCurrentUsername();
         Long id = leadService.createLead(createDTO, userId, userName);
         return R.success(id);
     }
@@ -61,7 +61,7 @@ public class LeadController {
     public R<Void> updateLead(@PathVariable Long id, @Valid @RequestBody LeadUpdateDTO updateDTO) {
         updateDTO.setId(id);
         Long userId = SecurityUtil.getCurrentUserId();
-        String userName = SecurityUtil.getCurrentUserName();
+        String userName = SecurityUtil.getCurrentUsername();
         leadService.updateLead(updateDTO, userId, userName);
         return R.success();
     }
@@ -71,7 +71,7 @@ public class LeadController {
     @DeleteMapping("/{id}")
     public R<Void> deleteLead(@PathVariable Long id) {
         Long userId = SecurityUtil.getCurrentUserId();
-        String userName = SecurityUtil.getCurrentUserName();
+        String userName = SecurityUtil.getCurrentUsername();
         leadService.deleteLead(id, userId, userName);
         return R.success();
     }
@@ -81,7 +81,7 @@ public class LeadController {
     @PutMapping("/{id}/status")
     public R<Void> updateLeadStatus(@PathVariable Long id, @Valid @RequestBody LeadStatusUpdateDTO statusDTO) {
         Long userId = SecurityUtil.getCurrentUserId();
-        String userName = SecurityUtil.getCurrentUserName();
+        String userName = SecurityUtil.getCurrentUsername();
         leadService.updateLeadStatus(id, statusDTO, userId, userName);
         return R.success();
     }
@@ -91,7 +91,7 @@ public class LeadController {
     @PutMapping("/{id}/assign")
     public R<Void> assignLead(@PathVariable Long id, @Valid @RequestBody LeadAssignDTO assignDTO) {
         Long userId = SecurityUtil.getCurrentUserId();
-        String userName = SecurityUtil.getCurrentUserName();
+        String userName = SecurityUtil.getCurrentUsername();
         leadService.assignLead(id, assignDTO, userId, userName);
         return R.success();
     }
@@ -107,7 +107,7 @@ public class LeadController {
     @PostMapping("/import")
     public R<LeadImportResultDTO> importLeads(@RequestParam("file") MultipartFile file) {
         Long userId = SecurityUtil.getCurrentUserId();
-        String userName = SecurityUtil.getCurrentUserName();
+        String userName = SecurityUtil.getCurrentUsername();
         LeadImportResultDTO result = leadService.importLeads(file, userId, userName);
         return R.success(result);
     }

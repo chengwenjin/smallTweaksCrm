@@ -63,11 +63,21 @@ public class OperationLogAspect {
         try {
             Long userId = SecurityUtil.getCurrentUserId();
             String username = SecurityUtil.getCurrentUsername();
-            logEntity.setOperatorId(userId);
-            logEntity.setOperatorName(username);
+            if (userId != null) {
+                logEntity.setOperatorId(userId);
+            } else {
+                logEntity.setOperatorId(0L);
+            }
+            if (username != null) {
+                logEntity.setOperatorName(username);
+            } else {
+                logEntity.setOperatorName("unknown");
+            }
             log.info("当前用户 - ID: {}, 用户名: {}", userId, username);
         } catch (Exception e) {
             log.warn("获取当前用户信息失败", e);
+            logEntity.setOperatorId(0L);
+            logEntity.setOperatorName("unknown");
         }
         
         // 设置请求信息
