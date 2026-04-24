@@ -55,6 +55,76 @@ public class DataInitController {
         return executeSqlFile("db/crm_lead_assign_recycle_test_data_v2.sql", "完整测试数据");
     }
 
+    @Operation(summary = "初始化客户360°全景档案表结构")
+    @PostMapping("/crm-customer-schema")
+    public R<Map<String, Object>> initCrmCustomerSchema() {
+        return executeSqlFile("db/crm_customer_schema.sql", "客户360°全景档案-表结构");
+    }
+
+    @Operation(summary = "初始化客户360°全景档案菜单配置")
+    @PostMapping("/crm-customer-menu")
+    public R<Map<String, Object>> initCrmCustomerMenu() {
+        return executeSqlFile("db/crm_customer_menu.sql", "客户360°全景档案-菜单配置");
+    }
+
+    @Operation(summary = "初始化客户360°全景档案测试数据(35条以上)")
+    @PostMapping("/crm-customer-test-data")
+    public R<Map<String, Object>> initCrmCustomerTestData() {
+        return executeSqlFile("db/crm_customer_test_data.sql", "客户360°全景档案-测试数据");
+    }
+
+    @Operation(summary = "验证客户360°全景档案数据")
+    @GetMapping("/verify-customer-data")
+    public R<Map<String, Object>> verifyCustomerData() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Map<String, Object> customerCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_customer WHERE is_deleted = 0"
+            );
+            Map<String, Object> contactCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_customer_contact WHERE is_deleted = 0"
+            );
+            Map<String, Object> followCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_customer_follow WHERE is_deleted = 0"
+            );
+            Map<String, Object> levelCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_customer_level WHERE is_enabled = 1 AND is_deleted = 0"
+            );
+            Map<String, Object> tagCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_customer_tag WHERE is_enabled = 1 AND is_deleted = 0"
+            );
+            
+            result.put("customerCount", customerCount.get("count"));
+            result.put("contactCount", contactCount.get("count"));
+            result.put("followCount", followCount.get("count"));
+            result.put("levelCount", levelCount.get("count"));
+            result.put("tagCount", tagCount.get("count"));
+            
+            List<Map<String, Object>> customers = jdbcTemplate.queryForList(
+                "SELECT id, customer_no, customer_name, short_name, level_code, status, create_time " +
+                "FROM crm_customer WHERE is_deleted = 0 ORDER BY create_time DESC LIMIT 40"
+            );
+            result.put("customers", customers);
+            
+            List<Map<String, Object>> levels = jdbcTemplate.queryForList(
+                "SELECT id, level_code, level_name, sort_order, description FROM crm_customer_level WHERE is_enabled = 1 AND is_deleted = 0 ORDER BY sort_order"
+            );
+            result.put("levels", levels);
+            
+            List<Map<String, Object>> tags = jdbcTemplate.queryForList(
+                "SELECT id, tag_name, tag_color, tag_category FROM crm_customer_tag WHERE is_enabled = 1 AND is_deleted = 0 ORDER BY sort_order"
+            );
+            result.put("tags", tags);
+            
+            return R.success(result);
+            
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            return R.error(500, "验证失败: " + e.getMessage());
+        }
+    }
+
     @Operation(summary = "验证智能分配与回收模块数据")
     @GetMapping("/verify-assign-recycle")
     public R<Map<String, Object>> verifyAssignRecycleData() {

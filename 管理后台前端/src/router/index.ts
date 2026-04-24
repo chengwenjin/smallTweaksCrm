@@ -72,6 +72,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AssignRecordManagement',
         component: () => import('@/views/crm/lead/assign-record.vue'),
         meta: { title: '分配记录' }
+      },
+      {
+        path: 'crm/customer-360/customer',
+        name: 'CustomerManagement',
+        component: () => import('@/views/crm/customer/index.vue'),
+        meta: { title: '基础信息库' }
       }
     ]
   }

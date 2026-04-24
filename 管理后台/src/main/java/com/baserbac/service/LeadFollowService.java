@@ -85,10 +85,7 @@ public class LeadFollowService {
 
         leadFollowMapper.insert(follow);
 
-        CrmLead beforeUpdate = null;
-        try {
-            beforeUpdate = (CrmLead) lead.clone();
-        } catch (CloneNotSupportedException ignored) {}
+        CrmLead beforeUpdate = lead.clone();
 
         lead.setLastFollowTime(LocalDateTime.now());
         if (lead.getFollowCount() == null) {

@@ -43,6 +43,16 @@
             <el-icon><UserFilled /></el-icon>
             <span>客户与线索管理</span>
           </template>
+          <el-sub-menu index="/crm/customer-360">
+            <template #title>
+              <el-icon><DataAnalysis /></el-icon>
+              <span>客户360°全景档案</span>
+            </template>
+            <el-menu-item index="/crm/customer-360/customer">
+              <el-icon><Document /></el-icon>
+              <span>基础信息库</span>
+            </el-menu-item>
+          </el-sub-menu>
           <el-sub-menu index="/crm/lead-lifecycle">
             <template #title>
               <el-icon><Connection /></el-icon>
