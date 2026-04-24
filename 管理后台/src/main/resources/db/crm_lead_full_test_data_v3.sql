@@ -176,24 +176,24 @@ WHERE id <= 35 AND (`is_public` = 0 OR `is_public` IS NULL);
 -- 清理旧数据（如果需要）
 -- DELETE FROM `crm_assign_record` WHERE id > 0;
 
--- 插入分配记录
-INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `rule_name`, `reason`, `create_time`)
-SELECT id, lead_no, NULL, '系统', 1, '管理员', 1, 1, '北京-高优销售组', '自动分配：匹配地域规则', NOW()
+-- 插入分配记录（注意：表中没有 rule_name 字段）
+INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `reason`, `create_time`)
+SELECT id, lead_no, NULL, '系统', 1, '管理员', 1, 1, '自动分配：匹配地域规则', NOW()
 FROM `crm_lead` WHERE id <= 10
 AND NOT EXISTS (SELECT 1 FROM `crm_assign_record` r WHERE r.lead_id = `crm_lead`.id);
 
-INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `rule_name`, `reason`, `create_time`)
-SELECT id, lead_no, NULL, '系统', 1, '管理员', 2, NULL, NULL, '手动分配：管理员操作', NOW()
+INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `reason`, `create_time`)
+SELECT id, lead_no, NULL, '系统', 1, '管理员', 2, NULL, '手动分配：管理员操作', NOW()
 FROM `crm_lead` WHERE id > 10 AND id <= 20
 AND NOT EXISTS (SELECT 1 FROM `crm_assign_record` r WHERE r.lead_id = `crm_lead`.id);
 
-INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `rule_name`, `reason`, `create_time`)
-SELECT id, lead_no, 1, '管理员', NULL, NULL, 3, NULL, NULL, '回收：长期未跟进', NOW()
+INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `reason`, `create_time`)
+SELECT id, lead_no, 1, '管理员', NULL, NULL, 3, NULL, '回收：长期未跟进', NOW()
 FROM `crm_lead` WHERE id > 20 AND id <= 35
 AND NOT EXISTS (SELECT 1 FROM `crm_assign_record` r WHERE r.lead_id = `crm_lead`.id);
 
-INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `rule_name`, `reason`, `create_time`)
-SELECT id, lead_no, NULL, '系统', 1, '管理员', 1, 21, 'IT互联网-高新技术部', '自动分配：匹配行业规则', NOW()
+INSERT INTO `crm_assign_record` (`lead_id`, `lead_no`, `from_user_id`, `from_user_name`, `to_user_id`, `to_user_name`, `assign_type`, `rule_id`, `reason`, `create_time`)
+SELECT id, lead_no, NULL, '系统', 1, '管理员', 1, 21, '自动分配：匹配行业规则', NOW()
 FROM `crm_lead` WHERE id > 35
 AND NOT EXISTS (SELECT 1 FROM `crm_assign_record` r WHERE r.lead_id = `crm_lead`.id);
 
