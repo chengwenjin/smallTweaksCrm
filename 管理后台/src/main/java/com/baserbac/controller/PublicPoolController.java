@@ -41,7 +41,7 @@ public class PublicPoolController {
         
         if (userId == null) {
             log.warn("认领线索时无法获取用户ID，请登录后重试");
-            return R.fail(401, "请登录后重试");
+            return R.error(401, "请登录后重试");
         }
         
         log.info("用户 [{}] 正在认领线索: userId={}, leadId={}", userName, userId, claimDTO.getLeadId());
@@ -59,7 +59,7 @@ public class PublicPoolController {
         
         if (userId == null) {
             log.warn("回收线索时无法获取用户ID，请登录后重试");
-            return R.fail(401, "请登录后重试");
+            return R.error(401, "请登录后重试");
         }
         
         publicPoolService.recycleLead(leadId, RECYCLE_TYPE_MANUAL, reason, userId, userName);
