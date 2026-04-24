@@ -49,6 +49,56 @@ public class DataInitController {
         return executeSqlFile("db/crm_lead_assign_recycle_test_data.sql", "公海池测试数据");
     }
 
+    @Operation(summary = "初始化智能分配规则完整测试数据(30条以上)")
+    @PostMapping("/crm-assign-full-test-data")
+    public R<Map<String, Object>> initCrmAssignFullTestData() {
+        return executeSqlFile("db/crm_lead_assign_recycle_test_data_v2.sql", "完整测试数据");
+    }
+
+    @Operation(summary = "验证智能分配与回收模块数据")
+    @GetMapping("/verify-assign-recycle")
+    public R<Map<String, Object>> verifyAssignRecycleData() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Map<String, Object> ruleCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_assign_rule"
+            );
+            Map<String, Object> recordCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_assign_record"
+            );
+            Map<String, Object> publicCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_lead WHERE is_public = 1 AND is_deleted = 0"
+            );
+            Map<String, Object> totalLeadCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_lead WHERE is_deleted = 0"
+            );
+            
+            result.put("assignRuleCount", ruleCount.get("count"));
+            result.put("assignRecordCount", recordCount.get("count"));
+            result.put("publicPoolCount", publicCount.get("count"));
+            result.put("totalLeadCount", totalLeadCount.get("count"));
+            
+            List<Map<String, Object>> rules = jdbcTemplate.queryForList(
+                "SELECT id, rule_name, rule_type, province, industry, assign_user_name, priority, is_enabled " +
+                "FROM crm_assign_rule ORDER BY priority LIMIT 40"
+            );
+            result.put("rules", rules);
+            
+            List<Map<String, Object>> records = jdbcTemplate.queryForList(
+                "SELECT id, lead_no, from_user_name, to_user_name, assign_type, rule_name, create_time " +
+                "FROM crm_assign_record ORDER BY create_time DESC LIMIT 40"
+            );
+            result.put("records", records);
+            
+            return R.success(result);
+            
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            return R.error(500, "验证失败: " + e.getMessage());
+        }
+    }
+
     private R<Map<String, Object>> executeSqlFile(String resourcePath, String moduleName) {
         Map<String, Object> result = new HashMap<>();
         List<String> errors = new ArrayList<>();

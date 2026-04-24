@@ -76,7 +76,7 @@
             {{ row.publicTime || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleClaim(row)">认领</el-button>
             <el-button link type="info" size="small" @click="handleView(row)">详情</el-button>
@@ -110,13 +110,77 @@
             v-model="claimForm.remark"
             type="textarea"
             :rows="3"
-            placeholder="请输入认领备注"
+            placeholder="请输入认领备注（可选）"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="claimDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitClaim" :loading="claimSubmitLoading">确定认领</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="线索详情"
+      width="800px"
+    >
+      <el-descriptions :column="2" border v-loading="detailLoading">
+        <el-descriptions-item label="线索编号">
+          {{ detailData.leadNo || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="线索名称">
+          {{ detailData.leadName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="联系人">
+          {{ detailData.contactName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="手机号">
+          {{ detailData.contactMobile || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="邮箱">
+          {{ detailData.contactEmail || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="来源">
+          {{ detailData.sourceName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="等级">
+          <el-tag :type="getLevelTagType(detailData.level)" size="small">
+            {{ detailData.levelName || '-' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="getStatusTagType(detailData.status)" size="small">
+            {{ detailData.statusName || '-' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="预计金额">
+          {{ detailData.expectedAmount ? `¥${detailData.expectedAmount}` : '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="原负责人">
+          {{ detailData.fromUserName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="行业">
+          {{ detailData.industry || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="地区">
+          {{ detailData.province || '' }}{{ detailData.city ? ' ' + detailData.city : '' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="入池时间">
+          {{ detailData.publicTime || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">
+          {{ detailData.createTime || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="入池原因" :span="2">
+          {{ detailData.publicReason || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="需求描述" :span="2">
+          {{ detailData.description || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
@@ -129,10 +193,13 @@ import {
   getPublicPoolList,
   claimPublicPoolLead
 } from '@/api/publicPool'
+import { getLeadDetail } from '@/api/lead'
 
 const loading = ref(false)
 const claimDialogVisible = ref(false)
 const claimSubmitLoading = ref(false)
+const detailDialogVisible = ref(false)
+const detailLoading = ref(false)
 const currentRow = ref<any>(null)
 
 const searchForm = reactive({
@@ -149,6 +216,7 @@ const pagination = reactive({
 })
 
 const tableData = ref<any[]>([])
+const detailData = ref<any>({})
 
 const claimForm = reactive({
   leadId: null as number | null,
@@ -158,6 +226,14 @@ const claimForm = reactive({
 const getLevelTagType = (level: number) => {
   if (level === 1) return 'danger'
   if (level === 2) return 'warning'
+  return 'info'
+}
+
+const getStatusTagType = (status: number) => {
+  if (status === 0) return 'primary'
+  if (status === 1) return 'warning'
+  if (status === 2) return 'success'
+  if (status === 3) return 'danger'
   return 'info'
 }
 
@@ -205,24 +281,38 @@ const handleClaim = (row: any) => {
   })
 }
 
-const handleView = (row: any) => {
-  ElMessage.info('详情功能开发中')
-}
-
 const handleSubmitClaim = async () => {
   claimSubmitLoading.value = true
   try {
-    await claimPublicPoolLead({
-      leadId: claimForm.leadId!,
-      remark: claimForm.remark
-    })
+    const params: any = {
+      leadId: claimForm.leadId!
+    }
+    if (claimForm.remark) {
+      params.remark = claimForm.remark
+    }
+    await claimPublicPoolLead(params)
     ElMessage.success('认领成功')
     claimDialogVisible.value = false
     fetchData()
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '认领失败，请稍后重试')
   } finally {
     claimSubmitLoading.value = false
+  }
+}
+
+const handleView = async (row: any) => {
+  detailLoading.value = true
+  detailDialogVisible.value = true
+  try {
+    const res = await getLeadDetail(row.leadId || row.id)
+    detailData.value = res.data || {}
+  } catch (error) {
+    console.error(error)
+    detailData.value = row
+  } finally {
+    detailLoading.value = false
   }
 }
 

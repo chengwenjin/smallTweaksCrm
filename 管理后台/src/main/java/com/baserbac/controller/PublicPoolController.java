@@ -12,10 +12,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import static com.baserbac.service.PublicPoolService.*;
 
+@Slf4j
 @Tag(name = "公海池管理")
 @RestController
 @RequestMapping("/api/crm/public-pool")
@@ -36,6 +38,13 @@ public class PublicPoolController {
     public R<Void> claimLead(@Valid @RequestBody PublicPoolClaimDTO claimDTO) {
         Long userId = SecurityUtil.getCurrentUserId();
         String userName = SecurityUtil.getCurrentUsername();
+        
+        if (userId == null) {
+            log.warn("认领线索时无法获取用户ID，请登录后重试");
+            return R.fail(401, "请登录后重试");
+        }
+        
+        log.info("用户 [{}] 正在认领线索: userId={}, leadId={}", userName, userId, claimDTO.getLeadId());
         publicPoolService.claimLead(claimDTO, userId, userName);
         return R.success();
     }
@@ -47,6 +56,12 @@ public class PublicPoolController {
                                 @RequestParam(required = false) String reason) {
         Long userId = SecurityUtil.getCurrentUserId();
         String userName = SecurityUtil.getCurrentUsername();
+        
+        if (userId == null) {
+            log.warn("回收线索时无法获取用户ID，请登录后重试");
+            return R.fail(401, "请登录后重试");
+        }
+        
         publicPoolService.recycleLead(leadId, RECYCLE_TYPE_MANUAL, reason, userId, userName);
         return R.success();
     }
