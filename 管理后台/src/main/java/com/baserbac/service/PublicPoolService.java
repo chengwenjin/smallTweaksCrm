@@ -10,6 +10,8 @@ import com.baserbac.dto.PublicPoolQueryDTO;
 import com.baserbac.entity.*;
 import com.baserbac.mapper.*;
 import com.baserbac.vo.PublicPoolVO;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -27,8 +31,7 @@ public class PublicPoolService {
     private final LeadMapper leadMapper;
     private final LeadLogMapper leadLogMapper;
     private final AssignRecordMapper assignRecordMapper;
-    private final UserMapper userMapper;
-    private final AssignRuleService assignRuleService;
+    private final ObjectMapper objectMapper;
 
     public static final int RECYCLE_TYPE_LONG_TIME_NO_FOLLOW = 1;
     public static final int RECYCLE_TYPE_INVALID = 2;
@@ -67,34 +70,62 @@ public class PublicPoolService {
 
     @Transactional(rollbackFor = Exception.class)
     public void claimLead(PublicPoolClaimDTO claimDTO, Long userId, String userName) {
+        log.info("开始认领线索: leadId={}, userId={}, userName={}", 
+                 claimDTO.getLeadId(), userId, userName);
+        
+        if (userId == null) {
+            log.error("认领失败: userId 为 null");
+            throw new BusinessException("用户未登录，请先登录");
+        }
+        
         CrmLead lead = leadMapper.selectById(claimDTO.getLeadId());
         if (lead == null) {
+            log.error("认领失败: 线索不存在, leadId={}", claimDTO.getLeadId());
             throw new BusinessException("线索不存在");
         }
+        
+        log.info("找到线索: leadId={}, leadNo={}, leadName={}, isPublic={}",
+                 lead.getId(), lead.getLeadNo(), lead.getLeadName(), lead.getIsPublic());
 
         if (lead.getIsPublic() == null || lead.getIsPublic() != 1) {
+            log.error("认领失败: 线索不在公海, isPublic={}", lead.getIsPublic());
             throw new BusinessException("该线索不在公海池中");
         }
 
         CrmLead beforeUpdate = null;
         try {
-            beforeUpdate = (CrmLead) lead.clone();
-        } catch (CloneNotSupportedException ignored) {}
+            beforeUpdate = lead.clone();
+        } catch (Exception e) {
+            log.warn("clone线索失败: {}", e.getMessage());
+        }
 
         lead.setIsPublic(0);
         lead.setPublicReason(null);
         lead.setPublicTime(null);
         lead.setAssignUserId(userId);
-        lead.setAssignUserName(userName);
+        lead.setAssignUserName(userName != null ? userName : "未知用户");
         lead.setAssignTime(LocalDateTime.now());
-        lead.setSourceUserId(userId);
-        lead.setSourceUserName(userName);
+        if (lead.getSourceUserId() == null) {
+            lead.setSourceUserId(userId);
+        }
+        if (lead.getSourceUserName() == null) {
+            lead.setSourceUserName(userName != null ? userName : "未知用户");
+        }
 
-        leadMapper.updateById(lead);
+        log.info("更新线索状态: assignUserId={}, assignUserName={}", 
+                 lead.getAssignUserId(), lead.getAssignUserName());
+        
+        int updateCount = leadMapper.updateById(lead);
+        log.info("更新线索结果: updateCount={}", updateCount);
 
-        saveLeadLog(lead, LeadService.OPERATE_TYPE_ASSIGN, "认领线索", beforeUpdate, userId, userName, claimDTO.getRemark());
+        String logRemark = claimDTO.getRemark() != null ? claimDTO.getRemark() : "认领线索";
+        saveLeadLog(lead, LeadService.OPERATE_TYPE_ASSIGN, "认领线索", 
+                     beforeUpdate, userId, userName, logRemark);
+        log.info("线索操作日志已保存");
 
-        saveAssignRecord(lead, null, null, userId, userName, ASSIGN_TYPE_MANUAL, null, "从公海认领");
+        saveAssignRecord(lead, null, null, userId, userName, 
+                         ASSIGN_TYPE_MANUAL, null, "从公海认领");
+        log.info("分配记录已保存");
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -110,8 +141,10 @@ public class PublicPoolService {
 
         CrmLead beforeUpdate = null;
         try {
-            beforeUpdate = (CrmLead) lead.clone();
-        } catch (CloneNotSupportedException ignored) {}
+            beforeUpdate = lead.clone();
+        } catch (Exception e) {
+            log.warn("clone线索失败: {}", e.getMessage());
+        }
 
         Long fromUserId = lead.getAssignUserId();
         String fromUserName = lead.getAssignUserName();
@@ -126,66 +159,69 @@ public class PublicPoolService {
         leadMapper.updateById(lead);
 
         String logReason = RECYCLE_TYPE_NAMES[recycleType] + ": " + (reason != null ? reason : "");
-        saveLeadLog(lead, LeadService.OPERATE_TYPE_RECYCLE, "回收线索", beforeUpdate, operatorId, operatorName, logReason);
+        saveLeadLog(lead, LeadService.OPERATE_TYPE_RECYCLE, "回收线索", 
+                     beforeUpdate, operatorId, operatorName, logReason);
 
-        saveAssignRecord(lead, fromUserId, fromUserName, null, null, ASSIGN_TYPE_RECYCLE, null, logReason);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void autoAssignLead(CrmLead lead) {
-        CrmAssignRule matchingRule = assignRuleService.findMatchingRule(lead);
-
-        Long toUserId = null;
-        String toUserName = null;
-        Long ruleId = null;
-
-        if (matchingRule != null && matchingRule.getAssignUserId() != null) {
-            toUserId = matchingRule.getAssignUserId();
-            toUserName = matchingRule.getAssignUserName();
-            ruleId = matchingRule.getId();
-        }
-
-        if (toUserId == null) {
-            return;
-        }
-
-        CrmLead beforeUpdate = null;
-        try {
-            beforeUpdate = (CrmLead) lead.clone();
-        } catch (CloneNotSupportedException ignored) {}
-
-        lead.setAssignUserId(toUserId);
-        lead.setAssignUserName(toUserName);
-        lead.setAssignTime(LocalDateTime.now());
-        lead.setIsPublic(0);
-
-        leadMapper.updateById(lead);
-
-        String reason = "匹配规则: " + (matchingRule != null ? matchingRule.getRuleName() : "默认规则");
-        saveLeadLog(lead, LeadService.OPERATE_TYPE_ASSIGN, "自动分配线索", beforeUpdate, toUserId, toUserName, reason);
-
-        saveAssignRecord(lead, lead.getSourceUserId(), lead.getSourceUserName(), toUserId, toUserName, ASSIGN_TYPE_AUTO, ruleId, reason);
+        saveAssignRecord(lead, fromUserId, fromUserName, null, null, 
+                         ASSIGN_TYPE_RECYCLE, null, logReason);
     }
 
     private void saveLeadLog(CrmLead lead, int operateType, String operateName, CrmLead beforeUpdate,
                              Long userId, String userName, String remark) {
-        CrmLeadLog log = new CrmLeadLog();
-        log.setLeadId(lead.getId());
-        log.setLeadNo(lead.getLeadNo());
-        log.setOperateType(operateType);
-        log.setOperateName(operateName);
-        log.setOperateUserId(userId);
-        log.setOperateUserName(userName);
-        log.setRemark(remark);
-        leadLogMapper.insert(log);
+        log.info("保存线索操作日志: leadId={}, leadNo={}, operateType={}, operateName={}",
+                 lead.getId(), lead.getLeadNo(), operateType, operateName);
+        
+        if (lead.getId() == null) {
+            log.error("保存日志失败: lead.id 为 null");
+            return;
+        }
+        if (lead.getLeadNo() == null) {
+            log.warn("leadNo 为 null, 使用 ID 代替");
+        }
+        
+        CrmLeadLog leadLog = new CrmLeadLog();
+        leadLog.setLeadId(lead.getId());
+        leadLog.setLeadNo(lead.getLeadNo() != null ? lead.getLeadNo() : "LD-" + lead.getId());
+        leadLog.setOperateType(operateType);
+        leadLog.setOperateName(operateName);
+        leadLog.setOperateUserId(userId);
+        leadLog.setOperateUserName(userName != null ? userName : "未知用户");
+        leadLog.setRemark(remark);
+
+        if (beforeUpdate != null) {
+            try {
+                Map<String, Object> content = new HashMap<>();
+                content.put("before", beforeUpdate);
+                content.put("after", lead);
+                leadLog.setOperateContent(objectMapper.writeValueAsString(content));
+            } catch (JsonProcessingException e) {
+                log.error("序列化操作日志失败", e);
+            }
+        }
+
+        try {
+            int insertCount = leadLogMapper.insert(leadLog);
+            log.info("线索操作日志插入结果: insertCount={}, leadLogId={}", 
+                     insertCount, leadLog.getId());
+        } catch (Exception e) {
+            log.error("插入线索操作日志失败", e);
+        }
     }
 
     private void saveAssignRecord(CrmLead lead, Long fromUserId, String fromUserName,
                                    Long toUserId, String toUserName, Integer assignType,
                                    Long ruleId, String reason) {
+        log.info("保存分配记录: leadId={}, leadNo={}, fromUserId={}, toUserId={}, assignType={}",
+                 lead.getId(), lead.getLeadNo(), fromUserId, toUserId, assignType);
+        
+        if (lead.getId() == null) {
+            log.error("保存分配记录失败: lead.id 为 null");
+            return;
+        }
+        
         CrmAssignRecord record = new CrmAssignRecord();
         record.setLeadId(lead.getId());
-        record.setLeadNo(lead.getLeadNo());
+        record.setLeadNo(lead.getLeadNo() != null ? lead.getLeadNo() : "LD-" + lead.getId());
         record.setFromUserId(fromUserId);
         record.setFromUserName(fromUserName);
         record.setToUserId(toUserId);
@@ -193,7 +229,14 @@ public class PublicPoolService {
         record.setAssignType(assignType);
         record.setRuleId(ruleId);
         record.setReason(reason);
-        assignRecordMapper.insert(record);
+        
+        try {
+            int insertCount = assignRecordMapper.insert(record);
+            log.info("分配记录插入结果: insertCount={}, recordId={}", 
+                     insertCount, record.getId());
+        } catch (Exception e) {
+            log.error("插入分配记录失败", e);
+        }
     }
 
     private PublicPoolVO convertToVO(CrmLead lead) {

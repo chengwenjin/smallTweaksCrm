@@ -139,7 +139,8 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份">
-              <el-select v-model="form.province" placeholder="请选择省份" clearable style="width: 100%" filterable>
+              <el-select v-model="form.province" placeholder="请选择省份" clearable style="width: 100%" filterable
+                @change="handleProvinceChange">
                 <el-option
                   v-for="item in provinceList"
                   :key="item.value"
@@ -151,13 +152,26 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="城市">
-              <el-select v-model="form.city" placeholder="请选择/输入城市" clearable style="width: 100%" filterable allow-create>
+              <el-select v-model="form.city" placeholder="请选择城市" clearable style="width: 100%" filterable
+                @change="handleCityChange">
+                <el-option
+                  v-for="item in cityList"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="区县">
-              <el-select v-model="form.district" placeholder="请选择/输入区县" clearable style="width: 100%" filterable allow-create>
+              <el-select v-model="form.district" placeholder="请选择区县" clearable style="width: 100%" filterable>
+                <el-option
+                  v-for="item in districtList"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -275,7 +289,7 @@ import {
   deleteAssignRule
 } from '@/api/assignRule'
 import { getUserList } from '@/api/user'
-import { provinceList, industryList } from '@/data/dict'
+import { provinceList, getCityList, getDistrictList, industryList } from '@/data/region'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -283,6 +297,9 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const formRef = ref<FormInstance>()
 const userList = ref<any[]>([])
+
+const cityList = ref<any[]>([])
+const districtList = ref<any[]>([])
 
 const searchForm = reactive({
   ruleName: '',
@@ -376,13 +393,17 @@ const handleAdd = () => {
 
 const handleEdit = (row: any) => {
   dialogTitle.value = '编辑分配规则'
+  const newProvince = row.province || ''
+  const newCity = row.city || ''
+  const newDistrict = row.district || ''
+  
   Object.assign(form, {
     id: row.id,
     ruleName: row.ruleName,
     ruleType: row.ruleType || 1,
-    province: row.province || '',
-    city: row.city || '',
-    district: row.district || '',
+    province: newProvince,
+    city: newCity,
+    district: newDistrict,
     industry: row.industry || '',
     minEmployeeCount: row.minEmployeeCount,
     maxEmployeeCount: row.maxEmployeeCount,
@@ -393,6 +414,19 @@ const handleEdit = (row: any) => {
     isEnabled: row.isEnabled ?? 1,
     description: row.description || ''
   })
+  
+  if (newProvince) {
+    cityList.value = getCityList(newProvince)
+    if (newCity) {
+      districtList.value = getDistrictList(newProvince, newCity)
+    } else {
+      districtList.value = []
+    }
+  } else {
+    cityList.value = []
+    districtList.value = []
+  }
+  
   dialogVisible.value = true
 }
 
@@ -455,11 +489,33 @@ const resetForm = () => {
     isEnabled: 1,
     description: ''
   })
+  cityList.value = []
+  districtList.value = []
 }
 
 const handleDialogClose = () => {
   formRef.value?.resetFields()
   resetForm()
+}
+
+const handleProvinceChange = (val: string) => {
+  form.city = ''
+  form.district = ''
+  districtList.value = []
+  if (val) {
+    cityList.value = getCityList(val)
+  } else {
+    cityList.value = []
+  }
+}
+
+const handleCityChange = (val: string) => {
+  form.district = ''
+  if (form.province && val) {
+    districtList.value = getDistrictList(form.province, val)
+  } else {
+    districtList.value = []
+  }
 }
 
 onMounted(() => {
