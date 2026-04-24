@@ -136,7 +136,11 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="线索名称" prop="leadName">
-              <el-input v-model="form.leadName" placeholder="请输入线索名称" />
+              <el-input v-model="form.leadName" placeholder="请输入线索名称" clearable>
+                <template #append>
+                  <el-button @click="checkLeadNameDuplicate">查重</el-button>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -148,7 +152,11 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="手机号">
-              <el-input v-model="form.contactMobile" placeholder="请输入手机号" />
+              <el-input v-model="form.contactMobile" placeholder="请输入手机号" clearable>
+                <template #append>
+                  <el-button @click="checkMobileDuplicate">查重</el-button>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -319,6 +327,7 @@ import {
   getLeadSources
 } from '@/api/lead'
 import { getUserList } from '@/api/user'
+import { checkDuplicate } from '@/api/leadFollow'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -458,6 +467,64 @@ const handleAdd = () => {
   isEdit.value = false
   resetForm()
   dialogVisible.value = true
+}
+
+const checkMobileDuplicate = async () => {
+  if (!form.contactMobile || form.contactMobile.trim() === '') {
+    ElMessage.warning('请输入手机号后再查重')
+    return
+  }
+  try {
+    const params: any = {
+      contactMobile: form.contactMobile,
+      checkType: 2
+    }
+    if (form.id) {
+      params.leadId = form.id
+    }
+    const res = await checkDuplicate(params)
+    if (res.data && res.data.isDuplicate) {
+      const duplicateList = res.data.duplicateLeads || []
+      const message = duplicateList.map((item: any) => {
+        return `线索编号: ${item.leadNo}, 线索名称: ${item.leadName}`
+      }).join('\n')
+      ElMessage.warning(`手机号已存在重复数据:\n${message}`)
+    } else {
+      ElMessage.success('该手机号无重复数据')
+    }
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '查重失败')
+  }
+}
+
+const checkLeadNameDuplicate = async () => {
+  if (!form.leadName || form.leadName.trim() === '') {
+    ElMessage.warning('请输入线索名称后再查重')
+    return
+  }
+  try {
+    const params: any = {
+      leadName: form.leadName,
+      checkType: 1
+    }
+    if (form.id) {
+      params.leadId = form.id
+    }
+    const res = await checkDuplicate(params)
+    if (res.data && res.data.isDuplicate) {
+      const duplicateList = res.data.duplicateLeads || []
+      const message = duplicateList.map((item: any) => {
+        return `线索编号: ${item.leadNo}, 手机号: ${item.contactMobile}`
+      }).join('\n')
+      ElMessage.warning(`企业名称已存在重复数据:\n${message}`)
+    } else {
+      ElMessage.success('该企业名称无重复数据')
+    }
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || '查重失败')
+  }
 }
 
 const handleEdit = (row: any) => {
