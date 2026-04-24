@@ -109,7 +109,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="700px"
+      width="800px"
       @close="handleDialogClose"
     >
       <el-form
@@ -139,52 +139,73 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="省份">
-              <el-input v-model="form.province" placeholder="如：北京市" />
+              <el-select v-model="form.province" placeholder="请选择省份" clearable style="width: 100%" filterable>
+                <el-option
+                  v-for="item in provinceList"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="城市">
-              <el-input v-model="form.city" placeholder="如：北京市" />
+              <el-select v-model="form.city" placeholder="请选择/输入城市" clearable style="width: 100%" filterable allow-create>
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="区县">
-              <el-input v-model="form.district" placeholder="如：朝阳区" />
+              <el-select v-model="form.district" placeholder="请选择/输入区县" clearable style="width: 100%" filterable allow-create>
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-divider content-position="left">行业条件</el-divider>
         <el-row :gutter="20">
-          <el-col :span="24">
+          <el-col :span="12">
             <el-form-item label="行业">
-              <el-input v-model="form.industry" placeholder="如：IT互联网、金融、制造业" />
+              <el-select v-model="form.industry" placeholder="请选择行业" clearable style="width: 100%" filterable allow-create>
+                <el-option
+                  v-for="item in industryList"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-divider content-position="left">规模条件</el-divider>
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="最小员工数">
-              <el-input-number v-model="form.minEmployeeCount" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.minEmployeeCount" :min="0" :controls="false" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="最大员工数">
-              <el-input-number v-model="form.maxEmployeeCount" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.maxEmployeeCount" :min="0" :controls="false" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="年营收(万元)">
-              <el-input-number v-model="form.minAnnualRevenue" :min="0" :precision="2" style="width: 100%" />
+          <el-col :span="6">
+            <el-form-item label="最小年营收">
+              <el-input-number v-model="form.minAnnualRevenue" :min="0" :precision="2" :controls="false" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="最大年营收">
+              <el-input-number v-model="form.maxAnnualRevenue" :min="0" :precision="2" :controls="false" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-divider content-position="left">分配目标</el-divider>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="分配用户" prop="assignUserId">
               <el-select
                 v-model="form.assignUserId"
@@ -201,20 +222,23 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="8">
             <el-form-item label="优先级">
-              <el-input-number v-model="form.priority" :min="1" :max="100" style="width: 100%" />
+              <el-input-number v-model="form.priority" :min="1" :max="100" :controls="false" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="8">
             <el-form-item label="状态">
-              <el-switch
-                v-model="form.isEnabled"
-                :active-value="1"
-                :inactive-value="0"
-                active-text="启用"
-                inactive-text="禁用"
-              />
+              <div style="display: flex; align-items: center; height: 40px;">
+                <el-switch
+                  v-model="form.isEnabled"
+                  :active-value="1"
+                  :inactive-value="0"
+                />
+                <span style="margin-left: 8px; font-size: 14px;">
+                  {{ form.isEnabled === 1 ? '启用' : '禁用' }}
+                </span>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -251,6 +275,7 @@ import {
   deleteAssignRule
 } from '@/api/assignRule'
 import { getUserList } from '@/api/user'
+import { provinceList, industryList } from '@/data/dict'
 
 const loading = ref(false)
 const submitLoading = ref(false)
