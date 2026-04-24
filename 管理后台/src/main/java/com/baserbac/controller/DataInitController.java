@@ -34,19 +34,36 @@ public class DataInitController {
     @Operation(summary = "初始化线索管理模块数据")
     @PostMapping("/crm-lead")
     public R<Map<String, Object>> initCrmLeadData() {
+        return executeSqlFile("db/crm_lead_complete_v2.sql", "线索管理模块");
+    }
+
+    @Operation(summary = "初始化智能分配与回收模块数据")
+    @PostMapping("/crm-assign-recycle")
+    public R<Map<String, Object>> initCrmAssignRecycleData() {
+        return executeSqlFile("db/crm_lead_assign_recycle_schema.sql", "智能分配与回收模块-表结构");
+    }
+
+    @Operation(summary = "初始化公海池测试数据")
+    @PostMapping("/crm-public-pool-test-data")
+    public R<Map<String, Object>> initCrmPublicPoolTestData() {
+        return executeSqlFile("db/crm_lead_assign_recycle_test_data.sql", "公海池测试数据");
+    }
+
+    private R<Map<String, Object>> executeSqlFile(String resourcePath, String moduleName) {
         Map<String, Object> result = new HashMap<>();
         List<String> errors = new ArrayList<>();
         int successCount = 0;
 
         try {
-            ClassPathResource resource = new ClassPathResource("db/crm_lead_complete_v2.sql");
+            ClassPathResource resource = new ClassPathResource(resourcePath);
             
             String sqlContent;
             try (InputStreamReader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
                 sqlContent = FileCopyUtils.copyToString(reader);
             }
 
-            log.info("SQL文件编码检查：文件长度={}, 包含中文={}", 
+            log.info("【{}】SQL文件编码检查：文件长度={}, 包含中文={}", 
+                moduleName,
                 sqlContent.length(), 
                 sqlContent.contains("客户") || sqlContent.contains("线索"));
 

@@ -52,6 +52,18 @@
               <el-icon><Plus /></el-icon>
               <span>多渠道录入</span>
             </el-menu-item>
+            <el-menu-item index="/crm/lead-lifecycle/assign-rule">
+              <el-icon><Setting /></el-icon>
+              <span>智能分配规则</span>
+            </el-menu-item>
+            <el-menu-item index="/crm/lead-lifecycle/public-pool">
+              <el-icon><Share /></el-icon>
+              <span>公海池</span>
+            </el-menu-item>
+            <el-menu-item index="/crm/lead-lifecycle/assign-record">
+              <el-icon><Document /></el-icon>
+              <span>分配记录</span>
+            </el-menu-item>
           </el-sub-menu>
         </el-sub-menu>
       </el-menu>

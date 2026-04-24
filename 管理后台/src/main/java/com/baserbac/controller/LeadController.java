@@ -5,12 +5,14 @@ import com.baserbac.common.result.R;
 import com.baserbac.common.result.PageResult;
 import com.baserbac.dto.LeadAssignDTO;
 import com.baserbac.dto.LeadCreateDTO;
+import com.baserbac.dto.LeadDuplicateCheckDTO;
 import com.baserbac.dto.LeadImportResultDTO;
 import com.baserbac.dto.LeadQueryDTO;
 import com.baserbac.dto.LeadStatusUpdateDTO;
 import com.baserbac.dto.LeadUpdateDTO;
 import com.baserbac.common.util.SecurityUtil;
 import com.baserbac.service.LeadService;
+import com.baserbac.vo.LeadDuplicateCheckVO;
 import com.baserbac.vo.LeadSourceVO;
 import com.baserbac.vo.LeadVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -116,5 +118,11 @@ public class LeadController {
     @GetMapping("/import/template")
     public void downloadTemplate() {
         throw new UnsupportedOperationException("模板下载功能请使用前端提供的静态模板");
+    }
+
+    @Operation(summary = "查重检查（手机号、企业名称）")
+    @PostMapping("/duplicate-check")
+    public R<LeadDuplicateCheckVO> checkDuplicate(@RequestBody LeadDuplicateCheckDTO checkDTO) {
+        return R.success(leadService.checkDuplicate(checkDTO));
     }
 }

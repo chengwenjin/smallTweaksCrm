@@ -54,6 +54,24 @@ const routes: RouteRecordRaw[] = [
         name: 'LeadManagement',
         component: () => import('@/views/crm/lead/index.vue'),
         meta: { title: '多渠道录入' }
+      },
+      {
+        path: 'crm/lead-lifecycle/assign-rule',
+        name: 'AssignRuleManagement',
+        component: () => import('@/views/crm/lead/assign-rule.vue'),
+        meta: { title: '分配规则配置' }
+      },
+      {
+        path: 'crm/lead-lifecycle/public-pool',
+        name: 'PublicPoolManagement',
+        component: () => import('@/views/crm/lead/public-pool.vue'),
+        meta: { title: '公海池' }
+      },
+      {
+        path: 'crm/lead-lifecycle/assign-record',
+        name: 'AssignRecordManagement',
+        component: () => import('@/views/crm/lead/assign-record.vue'),
+        meta: { title: '分配记录' }
       }
     ]
   }

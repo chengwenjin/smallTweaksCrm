@@ -13,6 +13,7 @@ import com.baserbac.common.result.PageResult;
 import com.baserbac.dto.LeadApiCreateDTO;
 import com.baserbac.dto.LeadAssignDTO;
 import com.baserbac.dto.LeadCreateDTO;
+import com.baserbac.dto.LeadDuplicateCheckDTO;
 import com.baserbac.dto.LeadImportResultDTO;
 import com.baserbac.dto.LeadQueryDTO;
 import com.baserbac.dto.LeadStatusUpdateDTO;
@@ -25,6 +26,7 @@ import com.baserbac.mapper.LeadLogMapper;
 import com.baserbac.mapper.LeadMapper;
 import com.baserbac.mapper.LeadSourceMapper;
 import com.baserbac.mapper.UserMapper;
+import com.baserbac.vo.LeadDuplicateCheckVO;
 import com.baserbac.vo.LeadSourceVO;
 import com.baserbac.vo.LeadVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -737,5 +739,58 @@ public class LeadService {
                     ", contactName=" + contactName +
                     ", contactMobile=" + contactMobile;
         }
+    }
+
+    public LeadDuplicateCheckVO checkDuplicate(LeadDuplicateCheckDTO checkDTO) {
+        Long excludeId = checkDTO.getLeadId();
+        Integer checkType = checkDTO.getCheckType();
+
+        if (checkType == null) {
+            checkType = 3;
+        }
+
+        if (checkType == 1 || checkType == 3) {
+            if (StrUtil.isNotBlank(checkDTO.getContactMobile())) {
+                LambdaQueryWrapper<CrmLead> wrapper = new LambdaQueryWrapper<>();
+                wrapper.eq(CrmLead::getContactMobile, checkDTO.getContactMobile())
+                        .ne(excludeId != null, CrmLead::getId, excludeId);
+                CrmLead duplicate = leadMapper.selectOne(wrapper);
+                if (duplicate != null) {
+                    return LeadDuplicateCheckVO.builder()
+                            .hasDuplicate(true)
+                            .duplicateType("mobile")
+                            .duplicateMessage("手机号已存在，线索名称：" + duplicate.getLeadName())
+                            .duplicateLeadId(duplicate.getId())
+                            .duplicateLeadName(duplicate.getLeadName())
+                            .duplicateContactMobile(duplicate.getContactMobile())
+                            .build();
+                }
+            }
+        }
+
+        if (checkType == 2 || checkType == 3) {
+            if (StrUtil.isNotBlank(checkDTO.getLeadName())) {
+                LambdaQueryWrapper<CrmLead> wrapper = new LambdaQueryWrapper<>();
+                wrapper.eq(CrmLead::getLeadName, checkDTO.getLeadName())
+                        .ne(excludeId != null, CrmLead::getId, excludeId);
+                CrmLead duplicate = leadMapper.selectOne(wrapper);
+                if (duplicate != null) {
+                    return LeadDuplicateCheckVO.builder()
+                            .hasDuplicate(true)
+                            .duplicateType("name")
+                            .duplicateMessage("企业名称已存在，手机号：" + duplicate.getContactMobile())
+                            .duplicateLeadId(duplicate.getId())
+                            .duplicateLeadName(duplicate.getLeadName())
+                            .duplicateContactMobile(duplicate.getContactMobile())
+                            .build();
+                }
+            }
+        }
+
+        return LeadDuplicateCheckVO.builder()
+                .hasDuplicate(false)
+                .duplicateType(null)
+                .duplicateMessage("未发现重复数据")
+                .build();
     }
 }
