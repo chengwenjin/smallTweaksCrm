@@ -78,6 +78,24 @@ const routes: RouteRecordRaw[] = [
         name: 'CustomerManagement',
         component: () => import('@/views/crm/customer/index.vue'),
         meta: { title: '基础信息库' }
+      },
+      {
+        path: 'crm/resource-security/private-sea',
+        name: 'PrivateSeaConfig',
+        component: () => import('@/views/crm/resource-security/private-sea.vue'),
+        meta: { title: '私海配置' }
+      },
+      {
+        path: 'crm/resource-security/public-sea-rule',
+        name: 'PublicSeaRule',
+        component: () => import('@/views/crm/resource-security/public-sea-rule.vue'),
+        meta: { title: '公海规则' }
+      },
+      {
+        path: 'crm/resource-security/transfer',
+        name: 'ResourceTransfer',
+        component: () => import('@/views/crm/resource-security/transfer.vue'),
+        meta: { title: '离职一键回收' }
       }
     ]
   }
