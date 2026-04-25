@@ -53,6 +53,24 @@
               <span>基础信息库</span>
             </el-menu-item>
           </el-sub-menu>
+          <el-sub-menu index="/crm/resource-security">
+            <template #title>
+              <el-icon><Lock /></el-icon>
+              <span>资源安全与流转</span>
+            </template>
+            <el-menu-item index="/crm/resource-security/private-sea">
+              <el-icon><User /></el-icon>
+              <span>私海配置</span>
+            </el-menu-item>
+            <el-menu-item index="/crm/resource-security/public-sea-rule">
+              <el-icon><Share /></el-icon>
+              <span>公海规则</span>
+            </el-menu-item>
+            <el-menu-item index="/crm/resource-security/transfer">
+              <el-icon><Switch /></el-icon>
+              <span>离职一键回收</span>
+            </el-menu-item>
+          </el-sub-menu>
           <el-sub-menu index="/crm/lead-lifecycle">
             <template #title>
               <el-icon><Connection /></el-icon>

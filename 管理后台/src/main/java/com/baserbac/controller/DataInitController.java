@@ -292,6 +292,75 @@ public class DataInitController {
         }
     }
 
+    @Operation(summary = "初始化资源安全与流转表结构")
+    @PostMapping("/crm-resource-security-schema")
+    public R<Map<String, Object>> initResourceSecuritySchema() {
+        return executeSqlFile("db/crm_resource_security_schema.sql", "资源安全与流转-表结构");
+    }
+
+    @Operation(summary = "初始化资源安全与流转菜单配置")
+    @PostMapping("/crm-resource-security-menu")
+    public R<Map<String, Object>> initResourceSecurityMenu() {
+        return executeSqlFile("db/crm_resource_security_menu.sql", "资源安全与流转-菜单配置");
+    }
+
+    @Operation(summary = "初始化资源安全与流转测试数据(33条以上)")
+    @PostMapping("/crm-resource-security-test-data")
+    public R<Map<String, Object>> initResourceSecurityTestData() {
+        return executeSqlFile("db/crm_resource_security_test_data.sql", "资源安全与流转-测试数据");
+    }
+
+    @Operation(summary = "验证资源安全与流转数据")
+    @GetMapping("/verify-resource-security")
+    public R<Map<String, Object>> verifyResourceSecurity() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Map<String, Object> configCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_private_sea_config WHERE is_deleted = 0"
+            );
+            Map<String, Object> ruleCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_public_sea_rule WHERE is_deleted = 0"
+            );
+            Map<String, Object> recordCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_transfer_record WHERE is_deleted = 0"
+            );
+            Map<String, Object> detailCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_transfer_detail WHERE is_deleted = 0"
+            );
+            
+            result.put("privateSeaConfigCount", configCount.get("count"));
+            result.put("publicSeaRuleCount", ruleCount.get("count"));
+            result.put("transferRecordCount", recordCount.get("count"));
+            result.put("transferDetailCount", detailCount.get("count"));
+            
+            List<Map<String, Object>> configs = jdbcTemplate.queryForList(
+                "SELECT id, config_type, role_name, user_name, max_customer_count, max_lead_count, is_enabled, create_time " +
+                "FROM crm_private_sea_config WHERE is_deleted = 0 ORDER BY sort_order, id LIMIT 20"
+            );
+            result.put("privateSeaConfigs", configs);
+            
+            List<Map<String, Object>> rules = jdbcTemplate.queryForList(
+                "SELECT id, rule_name, rule_type, claim_limit_per_day, claim_limit_per_week, is_enabled, create_time " +
+                "FROM crm_public_sea_rule WHERE is_deleted = 0 ORDER BY sort_order, id"
+            );
+            result.put("publicSeaRules", rules);
+            
+            List<Map<String, Object>> records = jdbcTemplate.queryForList(
+                "SELECT id, transfer_no, transfer_type_name, from_user_name, to_user_name, " +
+                "customer_count, lead_count, reason, operator_name, create_time " +
+                "FROM crm_transfer_record WHERE is_deleted = 0 ORDER BY create_time DESC LIMIT 40"
+            );
+            result.put("transferRecords", records);
+            
+            return R.success(result);
+            
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            return R.error(500, "验证失败: " + e.getMessage());
+        }
+    }
+
     private List<String> parseSqlStatements(String sqlContent) {
         List<String> statements = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
