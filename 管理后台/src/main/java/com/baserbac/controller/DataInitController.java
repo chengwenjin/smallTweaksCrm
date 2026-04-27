@@ -379,6 +379,12 @@ public class DataInitController {
         return executeSqlFile("db/crm_sales_funnel_test_data.sql", "销售漏斗-测试数据");
     }
 
+    @Operation(summary = "初始化销售漏斗额外阶段数据(增加禁用阶段)")
+    @PostMapping("/crm-sales-funnel-extra-stages")
+    public R<Map<String, Object>> initSalesFunnelExtraStages() {
+        return executeSqlFile("db/crm_sales_funnel_extra_stages.sql", "销售漏斗-额外阶段数据");
+    }
+
     @Operation(summary = "验证销售漏斗数据")
     @GetMapping("/verify-sales-funnel")
     public R<Map<String, Object>> verifySalesFunnel() {
