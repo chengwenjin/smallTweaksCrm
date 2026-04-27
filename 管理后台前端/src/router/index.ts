@@ -96,6 +96,18 @@ const routes: RouteRecordRaw[] = [
         name: 'ResourceTransfer',
         component: () => import('@/views/crm/resource-security/transfer.vue'),
         meta: { title: '离职一键回收' }
+      },
+      {
+        path: 'crm/sales-funnel/stage',
+        name: 'SalesStageManagement',
+        component: () => import('@/views/crm/sales-funnel/stage.vue'),
+        meta: { title: '阶段管理' }
+      },
+      {
+        path: 'crm/sales-funnel/opportunity',
+        name: 'BusinessOpportunityManagement',
+        component: () => import('@/views/crm/sales-funnel/opportunity.vue'),
+        meta: { title: '商机管理' }
       }
     ]
   }

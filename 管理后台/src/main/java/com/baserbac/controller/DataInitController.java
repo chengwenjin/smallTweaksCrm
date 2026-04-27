@@ -361,6 +361,86 @@ public class DataInitController {
         }
     }
 
+    @Operation(summary = "初始化销售漏斗表结构")
+    @PostMapping("/crm-sales-funnel-schema")
+    public R<Map<String, Object>> initSalesFunnelSchema() {
+        return executeSqlFile("db/crm_sales_funnel_schema.sql", "销售漏斗-表结构");
+    }
+
+    @Operation(summary = "初始化销售漏斗菜单配置")
+    @PostMapping("/crm-sales-funnel-menu")
+    public R<Map<String, Object>> initSalesFunnelMenu() {
+        return executeSqlFile("db/crm_sales_funnel_menu.sql", "销售漏斗-菜单配置");
+    }
+
+    @Operation(summary = "初始化销售漏斗测试数据(50条以上)")
+    @PostMapping("/crm-sales-funnel-test-data")
+    public R<Map<String, Object>> initSalesFunnelTestData() {
+        return executeSqlFile("db/crm_sales_funnel_test_data.sql", "销售漏斗-测试数据");
+    }
+
+    @Operation(summary = "验证销售漏斗数据")
+    @GetMapping("/verify-sales-funnel")
+    public R<Map<String, Object>> verifySalesFunnel() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Map<String, Object> stageCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_sales_stage WHERE is_deleted = 0"
+            );
+            Map<String, Object> opportunityCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE is_deleted = 0"
+            );
+            
+            Map<String, Object> initialContactCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE stage_code = 'initial_contact' AND is_deleted = 0"
+            );
+            Map<String, Object> requirementCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE stage_code = 'requirement_confirmed' AND is_deleted = 0"
+            );
+            Map<String, Object> solutionCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE stage_code = 'solution_quotation' AND is_deleted = 0"
+            );
+            Map<String, Object> negotiationCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE stage_code = 'business_negotiation' AND is_deleted = 0"
+            );
+            Map<String, Object> wonCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE stage_code = 'won' AND is_deleted = 0"
+            );
+            Map<String, Object> lostCount = jdbcTemplate.queryForMap(
+                "SELECT COUNT(*) AS count FROM crm_business_opportunity WHERE stage_code = 'lost' AND is_deleted = 0"
+            );
+            
+            result.put("stageCount", stageCount.get("count"));
+            result.put("opportunityCount", opportunityCount.get("count"));
+            result.put("initialContactCount", initialContactCount.get("count"));
+            result.put("requirementCount", requirementCount.get("count"));
+            result.put("solutionCount", solutionCount.get("count"));
+            result.put("negotiationCount", negotiationCount.get("count"));
+            result.put("wonCount", wonCount.get("count"));
+            result.put("lostCount", lostCount.get("count"));
+            
+            List<Map<String, Object>> stages = jdbcTemplate.queryForList(
+                "SELECT id, stage_code, stage_name, sort_order, win_probability, is_enabled, is_closed, close_type " +
+                "FROM crm_sales_stage WHERE is_deleted = 0 ORDER BY sort_order"
+            );
+            result.put("stages", stages);
+            
+            List<Map<String, Object>> opportunities = jdbcTemplate.queryForList(
+                "SELECT id, opportunity_no, opportunity_name, customer_name, stage_name, win_probability, " +
+                "expected_amount, forecasted_amount, status, assign_user_name, create_time " +
+                "FROM crm_business_opportunity WHERE is_deleted = 0 ORDER BY create_time DESC LIMIT 50"
+            );
+            result.put("opportunities", opportunities);
+            
+            return R.success(result);
+            
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            return R.error(500, "验证失败: " + e.getMessage());
+        }
+    }
+
     private List<String> parseSqlStatements(String sqlContent) {
         List<String> statements = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
