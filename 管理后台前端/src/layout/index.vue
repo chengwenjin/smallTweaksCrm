@@ -93,6 +93,20 @@
               <span>分配记录</span>
             </el-menu-item>
           </el-sub-menu>
+          <el-sub-menu index="/crm/sales-funnel">
+            <template #title>
+              <el-icon><TrendCharts /></el-icon>
+              <span>标准化销售漏斗</span>
+            </template>
+            <el-menu-item index="/crm/sales-funnel/stage">
+              <el-icon><List /></el-icon>
+              <span>阶段管理</span>
+            </el-menu-item>
+            <el-menu-item index="/crm/sales-funnel/opportunity">
+              <el-icon><TrendCharts /></el-icon>
+              <span>商机管理</span>
+            </el-menu-item>
+          </el-sub-menu>
         </el-sub-menu>
       </el-menu>
     </el-aside>
