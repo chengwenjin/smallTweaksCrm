@@ -135,7 +135,7 @@ public class FollowRecordService {
             todo.setStatus(CrmTodoReminder.STATUS_PENDING);
             todo.setRemindTime(createDTO.getTodoRemindTime() != null ? createDTO.getTodoRemindTime() : createDTO.getNextFollowTime());
             todo.setEndTime(createDTO.getTodoEndTime());
-            todo.setBusinessType(CrmTodoReminder.BUSINESS_TYPE_CUSTOMER);
+            todo.setBusinessType(createDTO.getBusinessType());
             todo.setBusinessId(createDTO.getBusinessId());
             todo.setFollowRecordId(record.getId());
             todo.setRemindType(CrmTodoReminder.REMIND_TYPE_NOTIFICATION);
