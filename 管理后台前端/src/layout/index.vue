@@ -107,6 +107,30 @@
               <span>商机管理</span>
             </el-menu-item>
           </el-sub-menu>
+          <el-sub-menu index="/crm/sales-process">
+            <template #title>
+              <el-icon><UserFilled /></el-icon>
+              <span>销售过程与商机管理</span>
+            </template>
+            <el-sub-menu index="/crm/sales-process/field-work">
+              <template #title>
+                <el-icon><Location /></el-icon>
+                <span>过程跟进与外勤</span>
+              </template>
+              <el-menu-item index="/crm/sales-process/follow-record">
+                <el-icon><Document /></el-icon>
+                <span>跟进记录</span>
+              </el-menu-item>
+              <el-menu-item index="/crm/sales-process/field-checkin">
+                <el-icon><Location /></el-icon>
+                <span>外勤签到</span>
+              </el-menu-item>
+              <el-menu-item index="/crm/sales-process/todo-reminder">
+                <el-icon><Bell /></el-icon>
+                <span>待办提醒</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </el-sub-menu>
         </el-sub-menu>
       </el-menu>
     </el-aside>
