@@ -108,6 +108,24 @@ const routes: RouteRecordRaw[] = [
         name: 'BusinessOpportunityManagement',
         component: () => import('@/views/crm/sales-funnel/opportunity.vue'),
         meta: { title: '商机管理' }
+      },
+      {
+        path: 'crm/sales-process/follow-record',
+        name: 'FollowRecordManagement',
+        component: () => import('@/views/crm/sales-process/follow-record.vue'),
+        meta: { title: '跟进记录' }
+      },
+      {
+        path: 'crm/sales-process/field-checkin',
+        name: 'FieldCheckinManagement',
+        component: () => import('@/views/crm/sales-process/field-checkin.vue'),
+        meta: { title: '外勤签到' }
+      },
+      {
+        path: 'crm/sales-process/todo-reminder',
+        name: 'TodoReminderManagement',
+        component: () => import('@/views/crm/sales-process/todo-reminder.vue'),
+        meta: { title: '待办提醒' }
       }
     ]
   }
